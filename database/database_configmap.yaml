@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+        name: database-config
+        namespace: database
+        labels:
+                tier: backend
+data:
+        POSTGRES_DB: redmine
+        PGHOST: postgres
+        PGPORT: "5432"
+        PGDATABASE: redmine
+        HOSTNAME: postgres
+        
+   

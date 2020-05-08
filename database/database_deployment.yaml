@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+        name: postgres
+        namespace: database
+spec:
+        replicas: 1
+        selector:
+                matchLabels:
+                        tier: backend
+        template:
+                metadata:
+                        labels:
+                                tier: backend
+                spec:
+                        hostname: postgres
+                        containers:
+                                - name: postgres
+                                  image: postgres:latest
+                                  ports:
+                                          - containerPort: 5432
+                                  envFrom:
+                                          - configMapRef:
+                                                  name: database-config
+                                          - secretRef:
+                                                  name: database-secrets
+                                  livenessProbe:
+                                          tcpSocket:
+                                                  port: 5432
+                                          initialDelaySeconds: 30
+                                          timeoutSeconds: 1
+                                  readinessProbe:
+                                          tcpSocket:
+                                                  port: 5432
+                                          initialDelaySeconds: 10
+                                          timeoutSeconds: 1
+                                  volumeMounts:
+                                          - mountPath: /var/lib/postgresql/data
+                                            name: postgres-db
+                                          - mountPath: /etc/config
+                                            name: database-config-volume
+                                            readOnly: true
+                                          - mountPath: /etc/database-secrets
+                                            name: database-secrets
+                                            readOnly: true
+                        volumes:
+                                - name: database-config-volume
+                                  configMap:
+                                          name: database-config
+                                - name: database-secrets
+                                  secret:
+                                          secretName: database-secrets
+                                - name: postgres-db
+                                  persistentVolumeClaim:
+                                          claimName: database-pv-claim
+

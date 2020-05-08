@@ -1,0 +1,31 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+        name: database-pv-volume
+        namespace: database
+        labels:
+                tier: backend
+                type: local
+spec:
+        storageClassName: manual
+        capacity:
+                storage: 10Gi
+        accessModes:
+                - ReadWriteMany
+        hostPath:
+                path: "/var/lib/postgres"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+        name: database-pv-claim
+        namespace: database
+        labels:
+                tier: backend
+spec:
+        storageClassName: manual
+        accessModes:
+                - ReadWriteMany
+        resources:
+                requests:
+                        storage: 10Gi

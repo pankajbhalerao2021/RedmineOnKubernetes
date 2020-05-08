@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+        name: redmine
+        namespace: redmine
+        labels:
+                tier: frontend
+spec:
+        selector:
+                matchLabels:
+                        tier: frontend
+        replicas: 1
+        template:
+                metadata:
+                        labels:
+                                tier: frontend
+                spec:
+                        #initContainers:
+                        #       - imagePullPolicy: IfNotPresent
+                        #         name: copy
+                        #         image: redmine:latest
+                        #         ports:
+                        #                 - containerPort: 3000
+                        #         command: ["bash", "-c", "cp /etc/routes.rb /etc/route-config/routes.rb"]
+                        #         volumeMounts:
+                        #                 - name: redmine-route-config
+                        #                   subPath: routes.rb
+                        #                   mountPath: /etc/routes.rb
+                        #                 - name: shared
+                        #                   mountPath: /etc/route-config/
+                        containers:
+                                - imagePullPolicy: IfNotPresent
+                                  name: redmine
+                                  image: redmine:latest
+                                  ports:
+                                          - containerPort: 3000
+                                 #command: ["/bin/bash", "-c", "apt-get update; apt-get install -y ruby-dev;"]
+                                  envFrom:
+                                          - configMapRef:
+                                                  name: redmine-config
+                                          - secretRef:
+                                                  name: redmine-secrets
+                                 #lifecycle:
+                                 #        postStart:
+                                 #                exec:
+                                 #                        command:
+                                 #                                - "/bin/sh"
+                                 #                                - "-c"
+                                 #                                - "cp /etc/route-config/routes.rb /usr/src/redmine/config/routes.rb"
+                                  livenessProbe:
+                                          httpGet:
+                                                  path: /
+                                                  port: 3000
+                                          initialDelaySeconds: 120
+                                          timeoutSeconds: 2
+                                  readinessProbe:
+                                          httpGet:
+                                                  path: /
+                                                  port: 3000
+                                          initialDelaySeconds: 60
+                                          timeoutSeconds: 2
+                                  securityContext:
+                                          #readOnlyRootFilesystem: false
+                                          runAsUser: 999
+                                  volumeMounts:
+                                          - name: redmine-config
+                                            mountPath: /etc/config
+                                            readOnly: true
+                                          - name: redmine-secrets
+                                            mountPath: /etc/redmine-secrets
+                                            readOnly: true
+                                          - name: redmine-plugins
+                                            mountPath: /usr/src/redmine/plugins/
+                                          - name: redmine-route-config
+                                            subPath: routes.rb
+                                            mountPath: /usr/src/redmine/config/routes.rb
+                                         #- name: shared
+                                         #  mountPath: /etc/route-config/
+                        volumes:
+                                - name: redmine-config
+                                  configMap:
+                                          name: redmine-config
+                                - name: redmine-secrets
+                                  secret:
+                                          secretName: redmine-secrets
+                                - name: redmine-plugins
+                                  persistentVolumeClaim:
+                                          claimName: redmine-pv-claim
+                                - name: redmine-route-config
+                                  configMap:
+                                          name: redmine-route
+                               #- name: shared
+                               #  emptyDir: {}
